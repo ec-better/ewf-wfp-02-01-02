@@ -4,3 +4,6 @@
 *.hdf
 *.h5
 .ipynb_checkpoints
+*.pyc
+*checkpoint.py
+*checkpoint.ipynb
