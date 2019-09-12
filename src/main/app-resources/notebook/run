@@ -117,7 +117,7 @@ ciop = cioppy.Cioppy()"""))
     
     for reference in references:
       code.append(nbf.v4.new_code_cell('reference = "' + reference + '"'))
-      code.append(nbf.v4.new_code_cell("search = ciop.search(end_point = reference, params = [], output_fields='enclosure,identifier', model='GeoTime')"))
+      code.append(nbf.v4.new_code_cell("search = ciop.search(end_point = reference, params = [], output_fields='enclosure,identifier', model='GeoTime',creds='{}:{}'.format(user,apikey))"))
       code.append(nbf.v4.new_code_cell("retrieved = ciop.copy(search[0]['enclosure'], tmp_dir)"))
       code.append(nbf.v4.new_code_cell("assert(retrieved)"))
         
@@ -131,7 +131,7 @@ def stage_in():
     for reference in references:
       ciop.log('INFO', 'The input reference is: ' + reference)    
       
-      search = ciop.search(end_point = reference, params = [], output_fields='enclosure,identifier', model='GeoTime')
+      search = ciop.search(end_point = reference, params = [], output_fields='enclosure,identifier', model='GeoTime',creds='{}:{}'.format(user,apikey))
       assert(search), sys.exit(ERR_RESOLUTION)
   
       ciop.log('INFO', 'Retrieve %s from %s' % (search[0]['identifier'], search[0]['enclosure']))
@@ -203,6 +203,12 @@ def main():
     # Loops over all the inputs
     for reference in sys.stdin:
       references.append(reference.rstrip())
+    
+    global user
+    global apikey
+    
+    user = ciop.getparam('user')
+    apikey = ciop.getparam('apikey')
     
     # stage-in the data
     stage_in()
