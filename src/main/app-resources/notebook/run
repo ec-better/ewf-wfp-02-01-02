@@ -137,6 +137,7 @@ ciop = cioppy.Cioppy()"""))
         
 def stage_in():
  
+ 
     for reference in references:
       ciop.log('INFO', 'The input reference is: ' + reference)    
       
@@ -233,19 +234,29 @@ def main():
                            ('stop', enddate),
                            ('count', 'unlimited')])
 
+    
+    ciop.log('INFO', 'Searching in: ' + catalogue_url)
+    ciop.log('INFO', 'startdate: ' + startdate)
+    ciop.log('INFO', 'enddate: ' + enddate)
+
     search = ciop.search(end_point=catalogue_url, 
                          params=search_params,
                          output_fields='self,identifier,startdate,enddate,enclosure,title,updated',
                          model='GeoTime',creds='{}:{}'.format(user, apikey))
+                         
+    
 
     input_metadata = pd.DataFrame.from_dict(search)
+    
+    
 
 
     prods = input_metadata[input_metadata['title'].str.contains('modis_lst_10d_')]
 
-    references = prods['self'].tolist()
-
-
+    for r in prods['self'].tolist():
+        references.append(r)
+        
+    ciop.log('INFO', 'Found: ' + str(len(references)) + ' references')
     
     # stage-in the data
     stage_in()
@@ -256,6 +267,7 @@ def main():
     # execute the notebook
     nb_source = os.path.join('/application', 'notebook', 'libexec', 'input.ipynb')
     nb_target = os.path.join(runtime, 'result.ipynb')  
+
 
     try:
       execute(nb_source, nb_target, 'python2') 
