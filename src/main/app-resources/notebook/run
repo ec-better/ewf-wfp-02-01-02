@@ -12,6 +12,8 @@ import nbformat as nbf
 import uuid
 import ast
 
+import pandas as pd
+
 from urlparse import urlparse
 
 sys.path.append('/opt/anaconda/bin/')
@@ -211,15 +213,39 @@ def main():
     tmp_dir = os.path.join('/tmp', 'workspace-' + str(uuid.uuid4()), 'data') 
     os.makedirs(tmp_dir)
   
-    # Loops over all the inputs
-    for reference in sys.stdin:
-      references.append(reference.rstrip())
+    ## Loops over all the inputs
+    #for reference in sys.stdin:
+    #  references.append(reference.rstrip())
     
     global user
     global apikey
     
     user = ciop.getparam('user')
     apikey = ciop.getparam('apikey')
+
+    startdate = ciop.getparam('startdate')
+    enddate = ciop.getparam('enddate')
+
+
+    catalogue_url = 'https://catalog.terradue.com/' + user + '/search'
+    
+    search_params =  dict([('start', startdate),
+                           ('stop', enddate),
+                           ('count', 'unlimited')])
+
+    search = ciop.search(end_point=catalogue_url, 
+                         params=search_params,
+                         output_fields='self,identifier,startdate,enddate,enclosure,title,updated',
+                         model='GeoTime',creds='{}:{}'.format(user, apikey))
+
+    input_metadata = pd.DataFrame.from_dict(search)
+
+
+    prods = input_metadata[input_metadata['title'].str.contains('modis_lst_10d_')]
+
+    references = prods['self'].tolist()
+
+
     
     # stage-in the data
     stage_in()
@@ -258,4 +284,3 @@ except SystemExit as e:
   raise
 else:
   atexit.register(clean_exit, 0)
-
