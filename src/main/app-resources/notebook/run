@@ -12,6 +12,8 @@ import nbformat as nbf
 import uuid
 import ast
 
+import pandas as pd
+
 from urlparse import urlparse
 
 sys.path.append('/opt/anaconda/bin/')
@@ -135,6 +137,7 @@ ciop = cioppy.Cioppy()"""))
         
 def stage_in():
  
+ 
     for reference in references:
       ciop.log('INFO', 'The input reference is: ' + reference)    
       
@@ -211,15 +214,49 @@ def main():
     tmp_dir = os.path.join('/tmp', 'workspace-' + str(uuid.uuid4()), 'data') 
     os.makedirs(tmp_dir)
   
-    # Loops over all the inputs
-    for reference in sys.stdin:
-      references.append(reference.rstrip())
+    ## Loops over all the inputs
+    #for reference in sys.stdin:
+    #  references.append(reference.rstrip())
     
     global user
     global apikey
     
     user = ciop.getparam('user')
     apikey = ciop.getparam('apikey')
+
+    startdate = ciop.getparam('startdate')
+    enddate = ciop.getparam('enddate')
+
+
+    catalogue_url = 'https://catalog.terradue.com/' + user + '/search'
+    
+    search_params =  dict([('start', startdate),
+                           ('stop', enddate),
+                           ('count', 'unlimited')])
+
+    
+    ciop.log('INFO', 'Searching in: ' + catalogue_url)
+    ciop.log('INFO', 'startdate: ' + startdate)
+    ciop.log('INFO', 'enddate: ' + enddate)
+
+    search = ciop.search(end_point=catalogue_url, 
+                         params=search_params,
+                         output_fields='self,identifier,startdate,enddate,enclosure,title,updated',
+                         model='GeoTime',creds='{}:{}'.format(user, apikey))
+                         
+    
+
+    input_metadata = pd.DataFrame.from_dict(search)
+    
+    
+
+
+    prods = input_metadata[input_metadata['title'].str.contains('modis_lst_10d_')]
+
+    for r in prods['self'].tolist():
+        references.append(r)
+        
+    ciop.log('INFO', 'Found: ' + str(len(references)) + ' references')
     
     # stage-in the data
     stage_in()
@@ -230,6 +267,7 @@ def main():
     # execute the notebook
     nb_source = os.path.join('/application', 'notebook', 'libexec', 'input.ipynb')
     nb_target = os.path.join(runtime, 'result.ipynb')  
+
 
     try:
       execute(nb_source, nb_target, 'python2') 
@@ -258,4 +296,3 @@ except SystemExit as e:
   raise
 else:
   atexit.register(clean_exit, 0)
-
