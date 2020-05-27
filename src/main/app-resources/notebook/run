@@ -233,11 +233,8 @@ def main():
     search_params =  dict([('start', startdate),
                            ('stop', enddate),
                            ('count', 'unlimited')])
-
-    start_update = ciop.getparam('start_update')
-    stop_update = ciop.getparam('stop_update')
     
-    search_params['update'] = '{}/{}'.format(start_update,stop_update)
+    search_params['update'] = ciop.getparam('update')
 
     
     ciop.log('INFO', 'Searching in: ' + catalogue_url)
